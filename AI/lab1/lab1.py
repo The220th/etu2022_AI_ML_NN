@@ -1,6 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 
 import enum
+import pydot
 
 class Actions(enum.Enum):
     # Actions.up.name
@@ -10,6 +11,30 @@ class Actions(enum.Enum):
     down = 3
     left = 4
     
+
+# 5 8 3
+# 4 0 2
+# 7 6 1
+def get_init_state() -> list:
+    return [5, 8, 3, 4, 0, 2, 7, 6, 1]
+
+# 1 2 3
+# 4 5 6
+# 7 8 0
+def get_final_state() -> list:
+    return [1, 2, 3, 4, 5, 6, 7, 8, 0]
+
+
+
+
+
+
+
+
+
+
+
+
 
 class Nodes_handler():
 
@@ -32,8 +57,19 @@ class Nodes_handler():
             cls.__all_nodes[deep].append(node)
 
     @classmethod
+    def get_all_nodes(cls) -> list:
+        res = []
+        for k in cls.__all_nodes:
+            res += cls.__all_nodes[k]
+        return res
+
+    @classmethod
     def get_nodes_on_lvl(cls, lvl: int) -> list:
         return list(cls.__all_nodes[lvl])
+
+    @classmethod
+    def get_lowest_lvl(cls) -> int:
+        return max(cls.__all_nodes.keys())
 
     @classmethod
     def print_state(cls, state: list):
@@ -77,24 +113,7 @@ class Node:
         Node.static_node_id += 1
         
 
-def get_init_state() -> list:
-    return [4, 3, 5, 8, 6, 7, 2, 1, 0]
 
-def get_final_state() -> list:
-    return [1, 2, 3, 4, 5, 6, 7, 8, 0]
-'''
-# 5 8 3
-# 4 0 2
-# 7 6 1
-def get_init_state() -> list:
-    return [5, 8, 3, 4, 0, 2, 7, 6, 1]
-
-# 1 2 3
-# 4 5 6
-# 7 8 0
-def get_final_state() -> list:
-    return [1, 2, 3, 4, 5, 6, 7, 8, 0]
-'''
 
 def check_state_equals(state1: list, state2: list) -> bool:
     for i in range(9):
@@ -113,6 +132,54 @@ def cals_state_hash(state: list) -> int:
     for i in state:
         hash = 31*hash + i
     return hash
+
+def node_to_str(node: "Node") -> str:
+    res = f"id={node.node_id}, state: \n"
+    state = node.cur_state
+    gi = 0
+    for i in range(3):
+        for j in range(3):
+            if(state[gi] == 0):
+                res += "- "
+            else:
+                res += f"{state[gi]} "
+            gi+=1
+        res += "\n"
+    return res
+
+'''
+depth 18 ~ 7-8 GB RAM
+depth 22 ~ 10-12 GB RAM
+enjoy=)
+'''
+def build_graph(node_id_of_result: int = -1):
+    # https://github.com/pydot/pydot
+    # https://stackoverflow.com/questions/7670280/tree-plotting-in-python
+
+    print("Generating grapth \"result_graph.svg\" in svg-format. Please wait... ")
+
+    graph = pydot.Dot("my_graph", graph_type="graph", bgcolor="white")
+    all_nodes = Nodes_handler.get_all_nodes()
+    for node_i in all_nodes:
+        if(node_i.node_id == node_id_of_result):
+            # https://graphviz.org/docs/attrs/fillcolor/
+            # https://stackoverflow.com/questions/17252630/why-doesnt-fillcolor-work-with-graphviz
+            graph.add_node(pydot.Node(f"node{node_i.node_id}", label=f"{node_to_str(node_i)}", fillcolor="red", style="filled"))
+        else:
+            graph.add_node(pydot.Node(f"node{node_i.node_id}", label=f"{node_to_str(node_i)}"))
+    
+    lowest_lvl = Nodes_handler.get_lowest_lvl()
+    for i_h in range(lowest_lvl+1):
+        i = lowest_lvl-i_h
+        lowest_nodes = Nodes_handler.get_nodes_on_lvl(i)
+
+        for node_i in lowest_nodes:
+            if(node_i.parent_node != None):
+                graph.add_edge(pydot.Edge(f"node{node_i.node_id}", f"node{node_i.parent_node.node_id}", color="black"))
+    
+    #graph.write_png("1.png")
+    graph.write_svg("result_graph.svg")
+
 
 def state_swap(state: list, i: int, j: int) -> list:
     res = list(state)
@@ -188,6 +255,7 @@ def BFS():
             for new_node_i in new_nodes:
                 if(check_final(new_node_i.cur_state) == True):
                     Nodes_handler.print_node(new_node_i)
+                    build_graph(new_node_i.node_id)
                     exit()
         #input()
 
