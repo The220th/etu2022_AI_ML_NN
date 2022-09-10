@@ -8,7 +8,7 @@ import enum
 
 
 
-GRAPH_VISIALISATION = False
+GRAPH_VISIALISATION = True
 
 GRAPH_VISIALISATION_FILE_NAME = "result_graph.svg"
 
@@ -170,7 +170,7 @@ def cals_state_hash(state: list) -> int:
     return hash
 
 def node_to_str(node: "Node") -> str:
-    res = f"id={node.node_id}, depth = {node.depth}, state: \n"
+    res = f"id={node.node_id}, \ndepth = {node.depth}\n"
     state = node.cur_state
     gi = 0
     for i in range(3):
@@ -271,6 +271,7 @@ def get_next_states(cur_state: list) -> dict:
 def BFS():
     cur_lvl = 0
     hashes = set()
+    step_i = 1
     while(True):
         nodes_prev_lvl = Nodes_handler.get_nodes_on_lvl(cur_lvl)
         cur_lvl+=1
@@ -314,7 +315,10 @@ def BFS():
                     if(GRAPH_VISIALISATION):
                         build_graph(new_node_i.node_id)
                     exit()
-        #input()
+        if(DEBUG):
+            print(f"Current step: {step_i}. Press Enter... ")
+            input()
+        step_i += 1
 
 '''
 def DFS_recurfion(start: "Node", hashes: set, visited_id: list, lvl: int):
@@ -356,6 +360,7 @@ def DFS():
     stack = []
 
     stack += Nodes_handler.get_nodes_on_lvl(0)
+    step_i = 1
     while(len(stack) != 0):
         cur_node = stack.pop()
 
@@ -395,11 +400,12 @@ def DFS():
         
         for next_node in neighbors:
             if(next_node.node_id not in visited_id):
-                if(DEBUG):
-                    print("Choosen to go here: ")
-                    Nodes_handler.print_node(next_node)
                 stack.append(next_node)
-    
+
+        if(DEBUG):
+            print(f"Current step: {step_i}. Press Enter... ")
+            input()
+        step_i += 1
     print("No solution")
 
 
