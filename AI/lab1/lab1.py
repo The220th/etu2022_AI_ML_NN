@@ -1,7 +1,45 @@
 ﻿# -*- coding: utf-8 -*-
 
 import enum
-import pydot
+
+'''
+============================== Variable section begin ==============================
+'''    
+
+
+
+GRAPH_VISIALISATION = False
+
+GRAPH_VISIALISATION_FILE_NAME = "result_graph.svg"
+
+# False  -  BFS
+# True   -  DFS
+BFS_DFS = False
+
+# Если True, то каждый шаг придётся нажимать enter
+DEBUG = False
+
+# Вариант 1
+# 5 8 3
+# 4 0 2
+# 7 6 1
+def get_init_state() -> list:
+    return [5, 8, 3, 4, 0, 2, 7, 6, 1]
+
+# Вариант 1
+# 1 2 3
+# 4 5 6
+# 7 8 0
+def get_final_state() -> list:
+    return [1, 2, 3, 4, 5, 6, 7, 8, 0]
+
+
+
+'''
+============================== Variable section end ==============================
+'''
+
+
 
 class Actions(enum.Enum):
     # Actions.up.name
@@ -10,28 +48,6 @@ class Actions(enum.Enum):
     right = 2
     down = 3
     left = 4
-    
-
-# 5 8 3
-# 4 0 2
-# 7 6 1
-def get_init_state() -> list:
-    return [5, 8, 3, 4, 0, 2, 7, 6, 1]
-
-# 1 2 3
-# 4 5 6
-# 7 8 0
-def get_final_state() -> list:
-    return [1, 2, 3, 4, 5, 6, 7, 8, 0]
-
-
-# pip install --upgrade pip
-# pip install pydot
-
-
-
-
-
 
 
 
@@ -125,6 +141,10 @@ class Node:
 
         self.node_id = Node.static_node_id
         Node.static_node_id += 1
+
+    @classmethod
+    def get_node_amount(cls) -> int:
+        return cls.static_node_id + 1
         
 
 
@@ -150,7 +170,7 @@ def cals_state_hash(state: list) -> int:
     return hash
 
 def node_to_str(node: "Node") -> str:
-    res = f"id={node.node_id}, state: \n"
+    res = f"id={node.node_id}, depth = {node.depth}, state: \n"
     state = node.cur_state
     gi = 0
     for i in range(3):
@@ -173,6 +193,7 @@ def build_graph(node_id_of_result: int = -1):
     # https://stackoverflow.com/questions/7670280/tree-plotting-in-python
 
     print("Generating grapth \"result_graph.svg\" in svg-format. Please wait... ")
+    import pydot
 
     graph = pydot.Dot("my_graph", graph_type="graph", bgcolor="white")
     all_nodes = Nodes_handler.get_all_nodes()
@@ -194,7 +215,7 @@ def build_graph(node_id_of_result: int = -1):
                 graph.add_edge(pydot.Edge(f"node{node_i.node_id}", f"node{node_i.parent_node.node_id}", color="black"))
     
     #graph.write_png("1.png")
-    graph.write_svg("result_graph.svg")
+    graph.write_svg(GRAPH_VISIALISATION_FILE_NAME)
 
 
 # O(1)
@@ -253,17 +274,22 @@ def BFS():
     while(True):
         nodes_prev_lvl = Nodes_handler.get_nodes_on_lvl(cur_lvl)
         cur_lvl+=1
-        #print(f"cur_depth = {cur_lvl}")
+
+        if(DEBUG):
+            print(f"cur_depth = {cur_lvl}")
 
         for node_i in nodes_prev_lvl:
-            #print("\n\n\n\ncur_node:")
-            #Nodes_handler.print_node(node_i)
+            if(DEBUG):
+                print("\n\n\n\ncur_node:")
+                Nodes_handler.print_node(node_i)
 
             new_states_dict = get_next_states(node_i.cur_state)
 
             new_nodes = []
 
-            #print("\nits children:")
+            if(DEBUG):
+                print("\nits children:")
+
             for new_state_move_i in new_states_dict:
                 new_state_i = new_states_dict[new_state_move_i]
                 new_state_hash_i = cals_state_hash(new_state_i)
@@ -274,17 +300,24 @@ def BFS():
                 hashes.add(new_state_hash_i)
                 Nodes_handler.expand_chain(cur_lvl, new_node)
             
-                #Nodes_handler.print_node(new_node)
+                if(DEBUG):
+                    Nodes_handler.print_node(new_node)
             
             for new_node_i in new_nodes:
                 if(check_final(new_node_i.cur_state) == True):
-                    #Nodes_handler.print_node(new_node_i)
+                    if(DEBUG):
+                        print("!!! Answer finded !!!")
+                        Nodes_handler.print_node(new_node_i)
                     Nodes_handler.print_chain(new_node_i)
-                    #build_graph(new_node_i.node_id)
+                    print(f"Total turned out to be nodes: {Node.get_node_amount()}")
+                    print(f"Maximum depth: {Nodes_handler.get_lowest_lvl()}")
+                    if(GRAPH_VISIALISATION):
+                        build_graph(new_node_i.node_id)
                     exit()
         #input()
 
-def DFS(start: "Node", hashes: set, visited_id: list, lvl: int):
+'''
+def DFS_recurfion(start: "Node", hashes: set, visited_id: list, lvl: int):
     if(hashes == None):
         import sys
         #print(sys.getrecursionlimit())
@@ -313,11 +346,68 @@ def DFS(start: "Node", hashes: set, visited_id: list, lvl: int):
             exit()
     for next_node in neighbors:
         if(next_node.node_id not in visited_id):
-            DFS(next_node, hashes, visited_id, lvl+1)
+            DFS_recurfion(next_node, hashes, visited_id, lvl+1)
+'''
+
+# O(N), где N - глубина результата
+def DFS():
+    hashes = set()
+    visited_id = set()
+    stack = []
+
+    stack += Nodes_handler.get_nodes_on_lvl(0)
+    while(len(stack) != 0):
+        cur_node = stack.pop()
+
+        if(DEBUG):
+            print("Current node: ")
+            Nodes_handler.print_node(cur_node)
+
+        visited_id.add(cur_node.node_id)
+        if(check_final(cur_node.cur_state) == True):
+            if(DEBUG):
+                print("!!! Answer finded !!!")
+                Nodes_handler.print_node(cur_node)
+            Nodes_handler.print_chain(cur_node)
+            print(f"Total turned out to be nodes: {Node.get_node_amount()}")
+            print(f"Maximum depth: {Nodes_handler.get_lowest_lvl()}")
+            if(GRAPH_VISIALISATION):
+                build_graph(cur_node.node_id)
+            exit()
+
+        new_states_dict = get_next_states(cur_node.cur_state)
+        neighbors = []
+        lvl = cur_node.depth
+        for new_state_move_i in new_states_dict:
+            new_state_i = new_states_dict[new_state_move_i]
+            new_state_hash_i = cals_state_hash(new_state_i)
+            if(new_state_hash_i in hashes):
+                continue
+            new_node = Node(new_state_i, cur_node, new_state_move_i, lvl+1, lvl+1) # Стоимость равна глубине?
+            neighbors.append(new_node)
+            hashes.add(new_state_hash_i)
+            Nodes_handler.expand_chain(lvl+1, new_node)
+        
+        if(DEBUG):
+            print("Its neighbors: ")
+            for neighbor_i in neighbors:
+                Nodes_handler.print_node(neighbor_i)
+        
+        for next_node in neighbors:
+            if(next_node.node_id not in visited_id):
+                if(DEBUG):
+                    print("Choosen to go here: ")
+                    Nodes_handler.print_node(next_node)
+                stack.append(next_node)
     
+    print("No solution")
+
 
 if __name__ == '__main__':
     Nodes_handler.init()
 
-    #BFS()
-    DFS(Nodes_handler.get_nodes_on_lvl(0)[0], None, None, 0)
+    if(BFS_DFS):
+        #DFS_recurfion(Nodes_handler.get_nodes_on_lvl(0)[0], None, None, 0)
+        DFS()
+    else:
+        BFS()
