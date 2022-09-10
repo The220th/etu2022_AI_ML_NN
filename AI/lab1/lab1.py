@@ -284,12 +284,40 @@ def BFS():
                     exit()
         #input()
 
-def DFS():
-    cur_lvl = 0
-    hashes = set()
+def DFS(start: "Node", hashes: set, visited_id: list, lvl: int):
+    if(hashes == None):
+        import sys
+        #print(sys.getrecursionlimit())
+        sys.setrecursionlimit(1500000)
+        hashes = set()
+        visited_id = set()
+    visited_id.add(start.node_id)
+    
+    new_states_dict = get_next_states(start.cur_state)
+    neighbors = []
+    for new_state_move_i in new_states_dict:
+        new_state_i = new_states_dict[new_state_move_i]
+        new_state_hash_i = cals_state_hash(new_state_i)
+        if(new_state_hash_i in hashes):
+            continue
+        new_node = Node(new_state_i, start, new_state_move_i, lvl+1, lvl+1) # Стоимость равна глубине?
+        neighbors.append(new_node)
+        hashes.add(new_state_hash_i)
+        Nodes_handler.expand_chain(lvl+1, new_node)
+
+    for new_node_i in neighbors:
+        if(check_final(new_node_i.cur_state) == True):
+            #Nodes_handler.print_node(new_node_i)
+            Nodes_handler.print_chain(new_node_i)
+            #build_graph(new_node_i.node_id)
+            exit()
+    for next_node in neighbors:
+        if(next_node.node_id not in visited_id):
+            DFS(next_node, hashes, visited_id, lvl+1)
     
 
 if __name__ == '__main__':
     Nodes_handler.init()
 
-    BFS()
+    #BFS()
+    DFS(Nodes_handler.get_nodes_on_lvl(0)[0], None, None, 0)
