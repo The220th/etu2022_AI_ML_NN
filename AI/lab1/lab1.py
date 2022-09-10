@@ -25,8 +25,8 @@ def get_final_state() -> list:
     return [1, 2, 3, 4, 5, 6, 7, 8, 0]
 
 
-
-
+# pip install --upgrade pip
+# pip install pydot
 
 
 
@@ -85,10 +85,24 @@ class Nodes_handler():
         parent_id = None
         if(node.parent_node != None):
             parent_id = node.parent_node.node_id
-        print(f"id = {node.node_id}, parent_id = {parent_id}, \ndepth = {node.depth}, cost = {node.cost}, state: ")
+        node_prev_action = None
+        if(node.prev_action != None):
+            node_prev_action = node.prev_action.name
+        print(f"id = {node.node_id}, parent_id = {parent_id}, action = {node_prev_action}, \ndepth = {node.depth}, cost = {node.cost}, state: ")
         cls.print_state(node.cur_state)
         print("")
-        
+
+    @classmethod
+    def print_chain(cls, node_final: "Node"):
+        chain = []
+        cur_node = node_final
+        while(cur_node.parent_node != None):
+            chain.append(cur_node)
+            cur_node = cur_node.parent_node
+        chain.append(cur_node)
+        for node_i in chain:
+            cls.print_node(node_i)
+            print("\t^\n\t|\n")
 
 class Node:
 
@@ -105,7 +119,7 @@ class Node:
     def __init__(self, state: list, parent: "Node", action: "Actions", cost: int, depth: int):
         self.cur_state = state
         self.parent_node = parent
-        self.action = action
+        self.prev_action = action
         self.cost = cost
         self.depth = depth
 
@@ -114,19 +128,21 @@ class Node:
         
 
 
-
+# O(1)
 def check_state_equals(state1: list, state2: list) -> bool:
     for i in range(9):
         if(state1[i] != state2[i]):
             return False
     return True
 
+# O(1)
 def check_final(cur_state: list) -> bool:
     if(check_state_equals(cur_state, get_final_state()) == True):
         return True
     else:
         return False
 
+# O(1)
 def cals_state_hash(state: list) -> int:
     hash = 7
     for i in state:
@@ -181,11 +197,13 @@ def build_graph(node_id_of_result: int = -1):
     graph.write_svg("result_graph.svg")
 
 
+# O(1)
 def state_swap(state: list, i: int, j: int) -> list:
     res = list(state)
     res[i], res[j] = res[j], res[i]
     return res
 
+# O(1)
 # return new state or None
 def shift_state(cur_state: list, where: "Actions") -> list:
     # 0 1 2
@@ -216,14 +234,19 @@ def shift_state(cur_state: list, where: "Actions") -> list:
     else:
         print("Failed successfully (shift_state)")
 
-def get_next_states(cur_state: list) -> list:
-    res = []
+# O(1)
+def get_next_states(cur_state: list) -> dict:
+    res = {}
     for action_i in Actions:
-        res.append(    shift_state(cur_state, action_i)    )
-    res = list(filter(lambda x: x != None, res)) # Убрать все None`ы
+        cur_state_i = shift_state(cur_state, action_i)
+        if(cur_state_i != None):
+            res[action_i] = cur_state_i
+    #res = list(filter(lambda x: x != None, res)) # Убрать все None`ы
     return res
     
 
+# O( SUM[C^i, i=0..N] ) = , N - глубина результата, C - какая-то константа
+# = O ( 1/2*(C^(N+1) - 1) ) = O(C^N)
 def BFS():
     cur_lvl = 0
     hashes = set()
@@ -236,16 +259,17 @@ def BFS():
             #print("\n\n\n\ncur_node:")
             #Nodes_handler.print_node(node_i)
 
-            new_states = get_next_states(node_i.cur_state)
+            new_states_dict = get_next_states(node_i.cur_state)
 
             new_nodes = []
 
             #print("\nits children:")
-            for new_state_i in new_states:
+            for new_state_move_i in new_states_dict:
+                new_state_i = new_states_dict[new_state_move_i]
                 new_state_hash_i = cals_state_hash(new_state_i)
                 if(new_state_hash_i in hashes):
                     continue
-                new_node = Node(new_state_i, node_i, None, cur_lvl, cur_lvl) # Поиск в ширину - это частный случай поиска по критерию стоимости, когда стоимость равна глубине.
+                new_node = Node(new_state_i, node_i, new_state_move_i, cur_lvl, cur_lvl) # Поиск в ширину - это частный случай поиска по критерию стоимости, когда стоимость равна глубине.
                 new_nodes.append(new_node)
                 hashes.add(new_state_hash_i)
                 Nodes_handler.expand_chain(cur_lvl, new_node)
@@ -254,10 +278,16 @@ def BFS():
             
             for new_node_i in new_nodes:
                 if(check_final(new_node_i.cur_state) == True):
-                    Nodes_handler.print_node(new_node_i)
-                    build_graph(new_node_i.node_id)
+                    #Nodes_handler.print_node(new_node_i)
+                    Nodes_handler.print_chain(new_node_i)
+                    #build_graph(new_node_i.node_id)
                     exit()
         #input()
+
+def DFS():
+    cur_lvl = 0
+    hashes = set()
+    
 
 if __name__ == '__main__':
     Nodes_handler.init()
