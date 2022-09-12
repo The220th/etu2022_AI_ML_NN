@@ -1,6 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 
 import enum
+import heapq
 
 '''
 ============================== Variable section begin ==============================
@@ -8,7 +9,7 @@ import enum
 
 
 
-GRAPH_VISIALISATION = True
+GRAPH_VISIALISATION = False
 
 GRAPH_VISIALISATION_FILE_NAME = "result_graph"
 
@@ -37,9 +38,9 @@ def get_final_state() -> list:
 
 
 
-def heuristics(node: "Node") -> float:
+def heuristics(node: "Node") -> int:
     if(H1_H2 == False):
-        cur_value = 100*node.cost + 1500*h1(node.cur_state)
+        cur_value = node.cost + h1(node.cur_state)
     else:
         cur_value = node.cost + h2(node.cur_state)
     return cur_value
@@ -66,13 +67,13 @@ class Nodes_handler():
     #__chain = None
     __all_nodes = None
     __hashes = None
-    __ids = None
+    #__ids = None
 
     @classmethod
     def init(cls):
         cls.__all_nodes = []
         cls.__hashes = {}
-        cls.__ids = {}
+    #    cls.__ids = {}
 
     '''
     Если состояние нода повторяется, то не добавится.
@@ -83,15 +84,15 @@ class Nodes_handler():
             return
         cls.__all_nodes.append(node)
         cls.__hashes[cals_state_hash(node.cur_state)] = node
-        cls.__ids[node.node_id] = node
+    #    cls.__ids[node.node_id] = node
 
     @classmethod
     def get_all_nodes(cls) -> list:
         return cls.__all_nodes
     
-    @classmethod
-    def get_node_by_id(cls, node_id: int):
-        return cls.__ids[node_id]
+    #@classmethod
+    #def get_node_by_id(cls, node_id: int):
+    #    return cls.__ids[node_id]
 
     @classmethod
     def check_if_state_consist(cls, state: list) -> bool:
@@ -205,7 +206,7 @@ def build_graph(node_id_of_result: int = -1):
     # https://github.com/pydot/pydot
     # https://stackoverflow.com/questions/7670280/tree-plotting-in-python
 
-    print("Generating grapth \"{GRAPH_VISIALISATION_FILE_NAME}\" in dot-format and svg-format. Please wait... ")
+    print(f"Generating grapth \"{GRAPH_VISIALISATION_FILE_NAME}\" in dot-format and svg-format. Please wait... ")
     import pydot
 
     graph = pydot.Dot("my_graph", graph_type="graph", bgcolor="white")
@@ -311,12 +312,12 @@ def get_neighbors(with_node: "Node") -> list:
     return neighbors
 
 def get_next_node_with_min_f(nodes: list) -> "Node":
-    max_value = 0
+    min_value = 0
     res_node = None
     for node_i in nodes:
         cur_value = heuristics(node_i)
-        if(max_value <= cur_value):
-            max_value = cur_value
+        if(min_value > cur_value):
+            min_value = cur_value
             res_node = node_i
     return node_i
         
@@ -324,6 +325,7 @@ def get_next_node_with_min_f(nodes: list) -> "Node":
 def A_star():
     node_by_hash = {}
     open_list = set()
+    open_list_q = []
     close_list = set()
 
     cursor = Node(get_init_state(), None, None, 0)
@@ -333,8 +335,8 @@ def A_star():
     neighbors = get_neighbors(cursor)
     for neighbor_i in neighbors:
         open_list.add(neighbor_i.node_id)
-
-    cursor = get_next_node_with_min_f(Nodes_handler.get_all_nodes())
+        neighbor_i_h = heuristics(neighbor_i)
+        heapq.heappush(open_list_q, (neighbor_i_h, neighbor_i.node_id, neighbor_i))
     
     gi = 0
     while(True):
@@ -342,6 +344,8 @@ def A_star():
             print(f"o{len(open_list)} vs c{len(close_list)}")
             gi = 0
         gi+=1
+
+        cursor = heapq.heappop(open_list_q)[2]
         open_list.remove(cursor.node_id)
         close_list.add(cursor.node_id)
 
@@ -367,8 +371,8 @@ def A_star():
             else:
                 if(neighbor_i.node_id not in close_list):
                     open_list.add(neighbor_i.node_id)
-
-        cursor = get_next_node_with_min_f([Nodes_handler.get_node_by_id(id_i) for id_i in open_list])
+                    neighbor_i_h = heuristics(neighbor_i)
+                    heapq.heappush(open_list_q, (neighbor_i_h, neighbor_i.node_id, neighbor_i))
 
 
 
