@@ -1,6 +1,9 @@
 ﻿# -*- coding: utf-8 -*-
 
 import enum
+import psutil
+import os
+from time import process_time
 
 '''
 ============================== Variable section begin ==============================
@@ -183,11 +186,6 @@ def node_to_str(node: "Node") -> str:
         res += "\n"
     return res
 
-'''
-depth 18 ~ 7-8 GB RAM
-depth 22 ~ 10-12 GB RAM
-enjoy=)
-'''
 def build_graph(node_id_of_result: int = -1):
     # https://github.com/pydot/pydot
     # https://stackoverflow.com/questions/7670280/tree-plotting-in-python
@@ -274,6 +272,7 @@ def BFS():
     cur_lvl = 0
     hashes = set()
     step_i = 1
+    iteration_count = 0
     while(True):
         nodes_prev_lvl = Nodes_handler.get_nodes_on_lvl(cur_lvl)
         cur_lvl+=1
@@ -310,13 +309,20 @@ def BFS():
                     Nodes_handler.print_node(new_node)
             
             for new_node_i in new_nodes:
+                iteration_count+=1
                 if(check_final(new_node_i.cur_state) == True):
                     if(DEBUG):
                         print("!!! Answer finded !!!")
                         Nodes_handler.print_node(new_node_i)
+
+                    TIME_STOP = process_time()
+
                     Nodes_handler.print_chain(new_node_i)
                     print(f"Total turned out to be nodes: {Node.get_node_amount()}")
                     print(f"Maximum depth: {Nodes_handler.get_lowest_lvl()}")
+                    print(f"Iteration count: {iteration_count}")
+                    print(f"Processor time user: {(TIME_STOP-TIME_START)*1000} miliseconds")
+                    print(f"Memory (rss) used: {psutil.Process(os.getpid()).memory_info().rss} bytes")
                     if(GRAPH_VISIALISATION):
                         build_graph(new_node_i.node_id)
                     exit()
@@ -366,6 +372,7 @@ def DFS():
 
     stack += Nodes_handler.get_nodes_on_lvl(0)
     step_i = 1
+    iteration_count = 0
     while(len(stack) != 0):
         cur_node = stack.pop()
 
@@ -374,13 +381,20 @@ def DFS():
             Nodes_handler.print_node(cur_node)
 
         visited_id.add(cur_node.node_id)
+        iteration_count+=1
         if(check_final(cur_node.cur_state) == True):
             if(DEBUG):
                 print("!!! Answer finded !!!")
                 Nodes_handler.print_node(cur_node)
+
+            TIME_STOP = process_time()
+
             Nodes_handler.print_chain(cur_node)
             print(f"Total turned out to be nodes: {Node.get_node_amount()}")
             print(f"Maximum depth: {Nodes_handler.get_lowest_lvl()}")
+            print(f"Iteration count: {iteration_count}")
+            print(f"Processor time user: {(TIME_STOP-TIME_START)*1000} miliseconds")
+            print(f"Memory (rss) used: {psutil.Process(os.getpid()).memory_info().rss} bytes")
             if(GRAPH_VISIALISATION):
                 build_graph(cur_node.node_id)
             exit()
@@ -416,9 +430,12 @@ def DFS():
         step_i += 1
     print("No solution")
 
+TIME_START = None
 
 if __name__ == '__main__':
     Nodes_handler.init()
+
+    TIME_START = process_time()
 
     if(BFS_DFS):
         #DFS_recurfion(Nodes_handler.get_nodes_on_lvl(0)[0], None, None, 0)

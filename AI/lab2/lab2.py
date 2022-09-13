@@ -2,6 +2,9 @@
 
 import enum
 import heapq
+import psutil
+import os
+from time import process_time
 
 '''
 ============================== Variable section begin ==============================
@@ -9,7 +12,7 @@ import heapq
 
 
 
-GRAPH_VISIALISATION = False
+GRAPH_VISIALISATION = True
 
 GRAPH_VISIALISATION_FILE_NAME = "result_graph"
 
@@ -37,7 +40,7 @@ def get_final_state() -> list:
     return list(global_final_state)
 
 
-
+# O(1)
 def heuristics(node: "Node") -> int:
     if(H1_H2 == False):
         cur_value = node.cost + h1(node.cur_state)
@@ -64,16 +67,13 @@ class Actions(enum.Enum):
 
 class Nodes_handler():
 
-    #__chain = None
     __all_nodes = None
     __hashes = None
-    #__ids = None
 
     @classmethod
     def init(cls):
         cls.__all_nodes = []
         cls.__hashes = {}
-    #    cls.__ids = {}
 
     '''
     Если состояние нода повторяется, то не добавится.
@@ -84,16 +84,12 @@ class Nodes_handler():
             return
         cls.__all_nodes.append(node)
         cls.__hashes[cals_state_hash(node.cur_state)] = node
-    #    cls.__ids[node.node_id] = node
 
     @classmethod
     def get_all_nodes(cls) -> list:
         return cls.__all_nodes
-    
-    #@classmethod
-    #def get_node_by_id(cls, node_id: int):
-    #    return cls.__ids[node_id]
 
+    # O(1)
     @classmethod
     def check_if_state_consist(cls, state: list) -> bool:
         state_hash = cals_state_hash(state)
@@ -102,6 +98,7 @@ class Nodes_handler():
         else:
             return False
 
+    # O(1)
     @classmethod
     def get_node_by_state(cls, state: list):
         state_hash = cals_state_hash(state)
@@ -278,6 +275,7 @@ def get_next_states(cur_state: list) -> dict:
     #res = list(filter(lambda x: x != None, res)) # Убрать все None`ы
     return res
 
+# O(1)
 def h1(state: list) -> int:
     state_final = global_final_state
     res = 0
@@ -286,6 +284,7 @@ def h1(state: list) -> int:
             res+=1
     return res
 
+# O(1)
 def h2(state: list) -> int:
     state_final = global_final_state
     res = 0
@@ -296,8 +295,7 @@ def h2(state: list) -> int:
         res += abs(final_x-state_x) + abs(final_y-state_y)
     return res
 
-
-
+# O(1)
 def get_neighbors(with_node: "Node") -> list:
     new_states_dict = get_next_states(with_node.cur_state)
     neighbors = []
@@ -310,22 +308,12 @@ def get_neighbors(with_node: "Node") -> list:
             neighbors.append(new_node)
             Nodes_handler.expand_chain(new_node)
     return neighbors
-
-def get_next_node_with_min_f(nodes: list) -> "Node":
-    min_value = 0
-    res_node = None
-    for node_i in nodes:
-        cur_value = heuristics(node_i)
-        if(min_value > cur_value):
-            min_value = cur_value
-            res_node = node_i
-    return node_i
         
 
 def A_star():
     node_by_hash = {}
     open_list = set()
-    open_list_q = []
+    open_list_q = []   #     https://docs.python.org/3/library/heapq.html
     close_list = set()
 
     cursor = Node(get_init_state(), None, None, 0)
@@ -338,29 +326,53 @@ def A_star():
         neighbor_i_h = heuristics(neighbor_i)
         heapq.heappush(open_list_q, (neighbor_i_h, neighbor_i.node_id, neighbor_i))
     
-    gi = 0
+    iteration_count = 0
+    step_i = 0
     while(True):
-        if(gi >= 1500):
-            print(f"o{len(open_list)} vs c{len(close_list)}")
-            gi = 0
-        gi+=1
 
-        cursor = heapq.heappop(open_list_q)[2]
+        heap_lowest = heapq.heappop(open_list_q)
+        cursor = heap_lowest[2]
         open_list.remove(cursor.node_id)
         close_list.add(cursor.node_id)
+        if(DEBUG):
+            print(f"Current lenght of open list  = {len(open_list)}")
+            print(f"Current lenght of close list = {len(close_list)}")
+            print(f"Cursor was selected because it had the minimum value of the f={heap_lowest[0]}")
+            print("Looking at node (cursor): ")
+            Nodes_handler.print_node(cursor)
 
+        iteration_count+=1
         if(check_final(cursor.cur_state) == True):
             if(DEBUG):
                 print("!!! Answer finded !!!")
                 Nodes_handler.print_node(cursor)
+
+            TIME_STOP = process_time()
+
             Nodes_handler.print_chain(cursor)
             print(f"Total turned out to be nodes: {Node.get_node_amount()}")
             print(f"Cost (depth): {cursor.cost}")
+            print(f"Iteration count: {iteration_count}")
+            print(f"Processor time user: {(TIME_STOP-TIME_START)*1000} miliseconds")
+            print(f"Memory (rss) used: {psutil.Process(os.getpid()).memory_info().rss} bytes")
             if(GRAPH_VISIALISATION):
                 build_graph(cursor.node_id)
             exit()
 
         neighbors = get_neighbors(cursor)
+
+        if(DEBUG):
+            print("Neighbors of cursor: ")
+            for neighbor_i in neighbors:
+                if(neighbor_i.node_id in close_list):
+                    print("This neighbor is located in a closed list and will not be considered")
+                elif(neighbor_i.node_id in open_list):
+                    print("This neighbor is located in the open list and g will be recalculated for it, if necessary")
+                else:
+                    print("This neighbor is new and has not been considered before. It will be added to the open list")
+                Nodes_handler.print_node(neighbor_i)
+                print(f"It has f = {heuristics(neighbor_i)}")
+
         for neighbor_i in neighbors:
             if(neighbor_i.node_id in open_list):
                 old_g = neighbor_i.cost
@@ -374,68 +386,18 @@ def A_star():
                     neighbor_i_h = heuristics(neighbor_i)
                     heapq.heappush(open_list_q, (neighbor_i_h, neighbor_i.node_id, neighbor_i))
 
-
-
-
-
-
-# O(N), где N - глубина результата
-def DFS():
-    hashes = set()
-    visited_id = set()
-    stack = []
-
-    stack += Nodes_handler.get_nodes_on_lvl(0)
-    step_i = 1
-    while(len(stack) != 0):
-        cur_node = stack.pop()
-
-        if(DEBUG):
-            print("Current node: ")
-            Nodes_handler.print_node(cur_node)
-
-        visited_id.add(cur_node.node_id)
-        if(check_final(cur_node.cur_state) == True):
-            if(DEBUG):
-                print("!!! Answer finded !!!")
-                Nodes_handler.print_node(cur_node)
-            Nodes_handler.print_chain(cur_node)
-            print(f"Total turned out to be nodes: {Node.get_node_amount()}")
-            print(f"Maximum depth: {Nodes_handler.get_lowest_lvl()}")
-            if(GRAPH_VISIALISATION):
-                build_graph(cur_node.node_id)
-            exit()
-
-        new_states_dict = get_next_states(cur_node.cur_state)
-        neighbors = []
-        lvl = cur_node.depth
-        for new_state_move_i in new_states_dict:
-            new_state_i = new_states_dict[new_state_move_i]
-            new_state_hash_i = cals_state_hash(new_state_i)
-            if(new_state_hash_i in hashes):
-                continue
-            new_node = Node(new_state_i, cur_node, new_state_move_i, lvl+1, lvl+1) # Стоимость равна глубине?
-            neighbors.append(new_node)
-            hashes.add(new_state_hash_i)
-            Nodes_handler.expand_chain(lvl+1, new_node)
-        
-        if(DEBUG):
-            print("Its neighbors: ")
-            for neighbor_i in neighbors:
-                Nodes_handler.print_node(neighbor_i)
-        
-        for next_node in neighbors:
-            if(next_node.node_id not in visited_id):
-                stack.append(next_node)
-
         if(DEBUG):
             print(f"Current step: {step_i}. Press Enter... ")
             input()
+            print("\n\n\n")
         step_i += 1
-    print("No solution")
+        
 
+TIME_START = None
 
 if __name__ == '__main__':
     Nodes_handler.init()
+
+    TIME_START = process_time()
 
     A_star()
