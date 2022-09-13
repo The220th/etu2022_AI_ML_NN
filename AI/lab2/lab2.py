@@ -309,9 +309,8 @@ def get_neighbors(with_node: "Node") -> list:
             Nodes_handler.expand_chain(new_node)
     return neighbors
         
-
+# O(C^N), C - это какая-то константа, N - это глубина решения.
 def A_star():
-    node_by_hash = {}
     open_list = set()
     open_list_q = []   #     https://docs.python.org/3/library/heapq.html
     close_list = set()
