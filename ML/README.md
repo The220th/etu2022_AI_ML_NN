@@ -14,7 +14,7 @@
 # Зависимости
 
 ``` bash
-> pip3 install pandas seaborn
+> pip3 install pandas seaborn statsmodels
 ```
 
 # lab1
