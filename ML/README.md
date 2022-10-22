@@ -14,7 +14,7 @@
 # Зависимости
 
 ``` bash
-> pip3 install pandas seaborn statsmodels sklearn
+> pip3 install pandas seaborn statsmodels sklearn xgboost
 ```
 
 # lab1
