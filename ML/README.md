@@ -17,10 +17,11 @@
 > pip3 install pandas seaborn statsmodels sklearn xgboost scikit-learn scipy matplotlib
 ```
 
-# lab1
+# lab1 - Классификация
 
 Датасет взят [отсюда](https://www.kaggle.com/datasets/christianlillelund/csgo-round-winner-classification).
 
-# lab2
+# lab2 - Кластеризация
 
 Датасет взят [отсюда](https://www.kaggle.com/datasets/lakshmanraj/vehicle-insurance-policy).
+
