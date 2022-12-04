@@ -1,13 +1,20 @@
 
+; Шаблон процессора
 (deftemplate cpu_struct "CPU struct"
+  ; Название процессора
   (slot name (type STRING))
+  ; Тип работ: min-для микрозадач (тонкий клиент), doc - работа с документами, max - любая работа, server - для сервера
   (slot work (type STRING) (allowed-values "min" "doc" "max" "server"))
+  ; Энергопотребление
   (slot W (type STRING) (allowed-values "low" "high"))
+  ; Стоимость
   (slot price (type STRING) (allowed-values "low" "high"))
+  ; Тип установки
   (slot size (type STRING) (allowed-values "small" "standard"))
 );
 
 
+; Изначальная "база знаний"
 (deffacts initial
   (cpu_struct (name "allwinner H5 cortex-A53") (work "min") (W "low") (price "low") (size "small"));
   (cpu_struct (name "Z-01") (work "min") (W "low") (price "high") (size "small"));
@@ -18,7 +25,6 @@
   (cpu_struct (name "celeron 440") (work "min") (W "high") (price "low") (size "standard"));
   (cpu_struct (name "celeron 400") (work "min") (W "high") (price "high") (size "standard"));
 
-
   (cpu_struct (name "core 2 Duo E8500") (work "doc") (W "high") (price "low") (size "standard"));
   (cpu_struct (name "e2-3800") (work "doc") (W "low") (price "low") (size "standard"));
   (cpu_struct (name "Pentium 4 3.0") (work "doc") (W "high") (price "high") (size "standard"));
@@ -28,7 +34,6 @@
   (cpu_struct (name "pentium Gold 5405U") (work "doc") (W "low") (price "high") (size "small"));
   (cpu_struct (name "i3-2350M") (work "doc") (W "high") (price "low") (size "small"));
 
-  
   (cpu_struct (name "i5-3570") (work "max") (W "high") (price "low") (size "standard"));
   (cpu_struct (name "i5-9400F") (work "max") (W "high") (price "high") (size "standard"));
   ;(cpu_struct (name "") (work "max") (W "low") (price "low") (size "standard"));
@@ -37,7 +42,6 @@
   (cpu_struct (name "i9-8950HK") (work "max") (W "high") (price "high") (size "small"));
   (cpu_struct (name "Broadcom BCM2711 ARM Cortex-A72") (work "max") (W "low") (price "low") (size "small"));
   (cpu_struct (name "Apple M1") (work "max") (W "low") (price "high") (size "small"));
-
 
   (cpu_struct (name "neoverse E1") (work "server") (W "low") (price "low") (size "small"));
   (cpu_struct (name "atom C2518") (work "server") (W "low") (price "high") (size "small"));
@@ -49,6 +53,7 @@
   (cpu_struct (name "epyc 7351P") (work "server") (W "high") (price "high") (size "standard"));
 );
 
+; Начальный цикл
 (defrule data-input
 (initial-fact)
 =>
@@ -67,12 +72,14 @@
 (retract ?f_addr);
 );
 
+; Если нужно выйти из программы
 (defrule R_bye
 (user_want 3)
 =>
 (printout t crlf "Bye! " crlf);
 );
 
+; Если пользователь решил дополнить базу
 (defrule R_if1_2
 (user_want 2)
 =>
@@ -97,6 +104,7 @@
 (assert (new_proc_size ?buff5));
 );
 
+; Перевод числовой цены в категорию стоимости
 (defrule R_if2_1
 (user_want 2)
 (new_proc_price_rub ?x)
@@ -107,6 +115,7 @@
 (retract ?f_addr);
 );
 
+; Перевод числовой цены в категорию стоимости
 (defrule R_if2_2
 (user_want 2)
 (new_proc_price_rub ?x)
@@ -117,6 +126,7 @@
 (retract ?f_addr);
 );
 
+; Перевод числового теплоотвода в категорию энергопотребления
 (defrule R_if3_1
 (user_want 2)
 (new_proc_W_W ?x)
@@ -127,6 +137,7 @@
 (retract ?f_addr);
 );
 
+; Перевод числового теплоотвода в категорию энергопотребления
 (defrule R_if3_2
 (user_want 2)
 (new_proc_W_W ?x)
@@ -137,6 +148,7 @@
 (retract ?f_addr);
 );
 
+; Занесение нового процессора в базу
 (defrule R_new_proc
 (user_want 2)
 (new_proc_name ?x_name)
@@ -157,7 +169,7 @@
 );
 
 
-
+; Если пользователь хочет получить рекомендацию
 (defrule R_if1_1
 (user_want 1)
 =>
@@ -179,6 +191,7 @@
 (assert (user_proc_size ?buff5));
 );
 
+; Рекомендация пользователю
 (defrule R_predict
 (user_want 1)
 (user_proc_price ?x_price)
@@ -193,6 +206,7 @@
 (assert (user_want 0));
 );
 
+; Если запросу пользователя не найти процессор из "базы знаний"
 (defrule R_predict_not
 (user_want 1)
 (user_proc_price ?x_price)
