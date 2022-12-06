@@ -33,7 +33,7 @@
 ``` clp
          CLIPS (Quicksilver Beta 3/26/08)
 CLIPS> (clear);
-CLIPS> (load lab.clp);
+CLIPS> (load lab3.clp);
 CLIPS> (reset);
 CLIPS> (run);
 ```
