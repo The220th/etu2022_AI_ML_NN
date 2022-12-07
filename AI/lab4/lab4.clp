@@ -8,12 +8,16 @@
 ;;;
 ;;;
 ;;;
+;;; 
 ;;;
-;;;
-;;;
-;;;
+;;; 
+;;; 
 ;;;
 ;;; ================================================================================
+
+
+;;; preview.jpeg:
+;;; https://i.imgur.com/D2SBItF.jpg
 
 
 
@@ -26,9 +30,12 @@
 
 
 (defglobal
-?*ID* = 0
 ?*HX* = 2 ; 1 if h1 or 2 if h2
 ?*DEBUG* = 0 ; 1 if пошаговый режим, 0 if сквозной режим
+
+?*ID* = 0
+?*NODE_COUNT* = 1 ; 1, потому что рутовый есть изначально
+?*ITER_COUNT* = 0
 
 ?*init_LU* = 5
 ?*init_CU* = 8
@@ -195,7 +202,8 @@
 (test (= ?v_RD ?*goal_RD*));
 =>
 (modify ?f_addr(status 2));
-(printout t "id=" ?v_id  " g=" ?v_g " f=" ?v_f " parent=" ?v_parent crlf
+(printout t crlf "==================================================" crlf
+"id=" ?v_id  " g=" ?v_g " f=" ?v_f " parent=" ?v_parent crlf
             ?v_LU ?v_CU ?v_RU crlf
             ?v_LM ?v_CM ?v_RM crlf
             ?v_LD ?v_CD ?v_RD crlf);
@@ -207,7 +215,7 @@
 (not (Node(status 0|2)))
 =>
 (halt);
-(printout t "No solution" crlf);
+(printout t crlf "No solution" crlf);
 );
 
 (defrule stop_if_solution_finded
@@ -216,7 +224,9 @@
 (Node(status 2))
 =>
 (halt);
-(printout t "Solution finded" crlf);
+(printout t crlf "Solution finded! " crlf);
+(printout t "Nodes number: " ?*NODE_COUNT* crlf);
+(printout t "Inter count: " ?*ITER_COUNT* crlf); 
 );
 
 ;;; C ETOrO MOMEHTA BECb MuP - ETO EKCnEPTHblE CuCTEMbl. 
@@ -263,15 +273,28 @@
                 (g ?v_g_2) (status 0) (parent ?v_parent_2) (f ?v_f_2)
            )
 
-(test(<= ?v_f_1 ?v_f_2))
+; (test(<= ?v_f_1 ?v_f_2))
 =>
+(if (= ?*DEBUG* 1) then
+(printout t crlf "Deleting repeat node:" crlf); 
+(printout t "id=" ?v_id_2  " g=" ?v_g_2 " f=" ?v_f_2 " parent=" ?v_parent_2 crlf
+            ?v_LU_2 ?v_CU_2 ?v_RU_2 crlf
+            ?v_LM_2 ?v_CM_2 ?v_RM_2 crlf
+            ?v_LD_2 ?v_CD_2 ?v_RD_2 crlf);
+)
 (if (<= ?v_f_1 ?v_f_2) then
         (retract ?f_addr_2) ; удаление повторной вершины с большей ЦФ
+        (if (= ?*DEBUG* 1) then (printout t "delete, because repeat" crlf));
 else
         (modify ?f_addr_1 (parent ?v_parent_2) (g ?v_g_2) (f ?v_f_2)) ; изменение с большей ЦФ
         (retract ?f_addr_2);
+        (if (= ?*DEBUG* 1) then (printout t "delete and refresh prev repeat" crlf));
 )
+(bind ?*NODE_COUNT* (- ?*NODE_COUNT* 1));
 )
+
+;;; ETO HE TAK CJlO)l(HO, KAK:
+;;;     https://youtu.be/a5EUUB5_HwY?t=20
 
 (defrule show_answer
 (declare (salience 500))
@@ -313,12 +336,15 @@ else
                  (f ?v_f&:(= ?v_f ?min))
                 )
 =>
-;(printout t ?min " " (fact-slot-value ?f Exp) crlf);
+(if (= ?*DEBUG* 1) then (printout t crlf "Creating "
+2 " new node from node: " crlf "id=" ?v_id  " g=" ?v_g " f=" ?v_f " parent=" ?v_parent crlf
+            (fact-slot-value ?f_addr_node LU) (fact-slot-value ?f_addr_node CU) (fact-slot-value ?f_addr_node RU) crlf
+            (fact-slot-value ?f_addr_node LM) (fact-slot-value ?f_addr_node CM) (fact-slot-value ?f_addr_node RM) crlf
+            (fact-slot-value ?f_addr_node LD) (fact-slot-value ?f_addr_node CD) (fact-slot-value ?f_addr_node RD) crlf));
+
 (modify ?f_addr_node(status 1));
 
 (bind ?a1 (calc_f (+ ?v_g 1) ?v_CU 0 ?v_RU ?v_LM ?v_CM ?v_RM ?v_LD ?v_CD ?v_RD));
-(retract ?f_addr_min);
-(assert (min ?a1));
 (assert (Node (id (get_next_ID)) (LU ?v_CU) (CU 0    ) (RU ?v_RU)
                                  (LM ?v_LM) (CM ?v_CM) (RM ?v_RM)
                                  (LD ?v_LD) (CD ?v_CD) (RD ?v_RD)
@@ -333,6 +359,9 @@ else
                  (g (+ ?v_g 1)) (status 0) (parent ?v_id) (f ?a2)
         )
 );
+
+(bind ?*NODE_COUNT* (+ ?*NODE_COUNT* 2));
+(bind ?*ITER_COUNT* (+ ?*ITER_COUNT* 1));
 );
 
 
@@ -348,12 +377,15 @@ else
                  (f ?v_f&:(= ?v_f ?min))
                 )
 =>
-;(printout t ?min " " (fact-slot-value ?f Exp) crlf);
+(if (= ?*DEBUG* 1) then (printout t crlf "Creating "
+3 " new node from node: " crlf "id=" ?v_id  " g=" ?v_g " f=" ?v_f " parent=" ?v_parent crlf
+            (fact-slot-value ?f_addr_node LU) (fact-slot-value ?f_addr_node CU) (fact-slot-value ?f_addr_node RU) crlf
+            (fact-slot-value ?f_addr_node LM) (fact-slot-value ?f_addr_node CM) (fact-slot-value ?f_addr_node RM) crlf
+            (fact-slot-value ?f_addr_node LD) (fact-slot-value ?f_addr_node CD) (fact-slot-value ?f_addr_node RD) crlf));
+
 (modify ?f_addr_node(status 1));
 
 (bind ?a1 (calc_f (+ ?v_g 1) 0 ?v_LU ?v_RU ?v_LM ?v_CM ?v_RM ?v_LD ?v_CD ?v_RD));
-(retract ?f_addr_min);
-(assert (min ?a1));
 (assert (Node (id (get_next_ID)) (LU     0) (CU ?v_LU) (RU ?v_RU)
                                  (LM ?v_LM) (CM ?v_CM) (RM ?v_RM)
                                  (LD ?v_LD) (CD ?v_CD) (RD ?v_RD)
@@ -376,6 +408,9 @@ else
                  (g (+ ?v_g 1)) (status 0) (parent ?v_id) (f ?a3)
         )
 );
+
+(bind ?*NODE_COUNT* (+ ?*NODE_COUNT* 3));
+(bind ?*ITER_COUNT* (+ ?*ITER_COUNT* 1));
 );
 
 
@@ -391,12 +426,15 @@ else
                  (f ?v_f&:(= ?v_f ?min))
                 )
 =>
-;(printout t ?min " " (fact-slot-value ?f Exp) crlf);
+(if (= ?*DEBUG* 1) then (printout t crlf "Creating "
+2 " new node from node: " crlf "id=" ?v_id  " g=" ?v_g " f=" ?v_f " parent=" ?v_parent crlf
+            (fact-slot-value ?f_addr_node LU) (fact-slot-value ?f_addr_node CU) (fact-slot-value ?f_addr_node RU) crlf
+            (fact-slot-value ?f_addr_node LM) (fact-slot-value ?f_addr_node CM) (fact-slot-value ?f_addr_node RM) crlf
+            (fact-slot-value ?f_addr_node LD) (fact-slot-value ?f_addr_node CD) (fact-slot-value ?f_addr_node RD) crlf));
+
 (modify ?f_addr_node(status 1));
 
 (bind ?a1 (calc_f (+ ?v_g 1) ?v_LU 0 ?v_CU ?v_LM ?v_CM ?v_RM ?v_LD ?v_CD ?v_RD));
-(retract ?f_addr_min);
-(assert (min ?a1));
 (assert (Node (id (get_next_ID)) (LU ?v_LU) (CU     0) (RU ?v_CU)
                                  (LM ?v_LM) (CM ?v_CM) (RM ?v_RM)
                                  (LD ?v_LD) (CD ?v_CD) (RD ?v_RD)
@@ -411,8 +449,17 @@ else
                  (g (+ ?v_g 1)) (status 0) (parent ?v_id) (f ?a2)
         )
 );
+
+(bind ?*NODE_COUNT* (+ ?*NODE_COUNT* 2));
+(bind ?*ITER_COUNT* (+ ?*ITER_COUNT* 1));
 );
 
+
+;;; ──────▄▌▐▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀​▀▀▀▀▀▀▌
+;;; ───▄▄██▌█      IT'S NOT A           ▌
+;;; ▄▄▄▌▐██▌█      LOVELY   DAY         ▌
+;;; ███████▌█▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄​▄▄▄▄▄▄▌
+;;; ▀(@)▀▀▀▀▀▀▀(@)(@)▀▀▀▀▀▀▀▀▀▀▀▀▀​▀▀▀▀(@)
 
 
 
@@ -427,12 +474,15 @@ else
                  (f ?v_f&:(= ?v_f ?min))
                 )
 =>
-;(printout t ?min " " (fact-slot-value ?f Exp) crlf);
+(if (= ?*DEBUG* 1) then (printout t crlf "Creating "
+3 " new node from node: " crlf "id=" ?v_id  " g=" ?v_g " f=" ?v_f " parent=" ?v_parent crlf
+            (fact-slot-value ?f_addr_node LU) (fact-slot-value ?f_addr_node CU) (fact-slot-value ?f_addr_node RU) crlf
+            (fact-slot-value ?f_addr_node LM) (fact-slot-value ?f_addr_node CM) (fact-slot-value ?f_addr_node RM) crlf
+            (fact-slot-value ?f_addr_node LD) (fact-slot-value ?f_addr_node CD) (fact-slot-value ?f_addr_node RD) crlf));
+
 (modify ?f_addr_node(status 1));
 
 (bind ?a1 (calc_f (+ ?v_g 1) 0 ?v_CU ?v_RU ?v_LU ?v_CM ?v_RM ?v_LD ?v_CD ?v_RD));
-(retract ?f_addr_min);
-(assert (min ?a1));
 (assert (Node (id (get_next_ID)) (LU 0) (CU ?v_CU) (RU ?v_RU)
                                  (LM ?v_LU) (CM ?v_CM) (RM ?v_RM)
                                  (LD ?v_LD) (CD ?v_CD) (RD ?v_RD)
@@ -455,6 +505,9 @@ else
                  (g (+ ?v_g 1)) (status 0) (parent ?v_id) (f ?a3)
         )
 );
+
+(bind ?*NODE_COUNT* (+ ?*NODE_COUNT* 3));
+(bind ?*ITER_COUNT* (+ ?*ITER_COUNT* 1));
 );
 
 
@@ -470,7 +523,12 @@ else
                  (f ?v_f&:(= ?v_f ?min))
                 )
 =>
-;(printout t ?min " " (fact-slot-value ?f Exp) crlf);
+(if (= ?*DEBUG* 1) then (printout t crlf "Creating "
+4 " new node from node: " crlf "id=" ?v_id  " g=" ?v_g " f=" ?v_f " parent=" ?v_parent crlf
+            (fact-slot-value ?f_addr_node LU) (fact-slot-value ?f_addr_node CU) (fact-slot-value ?f_addr_node RU) crlf
+            (fact-slot-value ?f_addr_node LM) (fact-slot-value ?f_addr_node CM) (fact-slot-value ?f_addr_node RM) crlf
+            (fact-slot-value ?f_addr_node LD) (fact-slot-value ?f_addr_node CD) (fact-slot-value ?f_addr_node RD) crlf));
+
 (modify ?f_addr_node(status 1));
 
 (bind ?a1 (calc_f (+ ?v_g 1) ?v_LU 0 ?v_RU ?v_LM ?v_CU ?v_RM ?v_LD ?v_CD ?v_RD));
@@ -506,6 +564,9 @@ else
                  (g (+ ?v_g 1)) (status 0) (parent ?v_id) (f ?a4)
         )
 );
+
+(bind ?*NODE_COUNT* (+ ?*NODE_COUNT* 4));
+(bind ?*ITER_COUNT* (+ ?*ITER_COUNT* 1));
 );
 
 
@@ -521,12 +582,15 @@ else
                  (f ?v_f&:(= ?v_f ?min))
                 )
 =>
-;(printout t ?min " " (fact-slot-value ?f Exp) crlf);
+(if (= ?*DEBUG* 1) then (printout t crlf "Creating "
+3 " new node from node: " crlf "id=" ?v_id  " g=" ?v_g " f=" ?v_f " parent=" ?v_parent crlf
+            (fact-slot-value ?f_addr_node LU) (fact-slot-value ?f_addr_node CU) (fact-slot-value ?f_addr_node RU) crlf
+            (fact-slot-value ?f_addr_node LM) (fact-slot-value ?f_addr_node CM) (fact-slot-value ?f_addr_node RM) crlf
+            (fact-slot-value ?f_addr_node LD) (fact-slot-value ?f_addr_node CD) (fact-slot-value ?f_addr_node RD) crlf));
+
 (modify ?f_addr_node(status 1));
 
 (bind ?a1 (calc_f (+ ?v_g 1) ?v_LU ?v_CU 0 ?v_LM ?v_CM ?v_RU ?v_LD ?v_CD ?v_RD));
-(retract ?f_addr_min);
-(assert (min ?a1));
 (assert (Node (id (get_next_ID)) (LU ?v_LU) (CU ?v_CU) (RU     0)
                                  (LM ?v_LM) (CM ?v_CM) (RM ?v_RU)
                                  (LD ?v_LD) (CD ?v_CD) (RD ?v_RD)
@@ -549,7 +613,14 @@ else
                  (g (+ ?v_g 1)) (status 0) (parent ?v_id) (f ?a3)
         )
 );
+
+(bind ?*NODE_COUNT* (+ ?*NODE_COUNT* 3));
+(bind ?*ITER_COUNT* (+ ?*ITER_COUNT* 1));
 );
+
+
+
+;;; ┬┴┬┴┤ ͜ʖ ͡°) ├┬┴┬┴
 
 
 
@@ -564,12 +635,15 @@ else
                  (f ?v_f&:(= ?v_f ?min))
                 )
 =>
-;(printout t ?min " " (fact-slot-value ?f Exp) crlf);
+(if (= ?*DEBUG* 1) then (printout t crlf "Creating "
+2 " new node from node: " crlf "id=" ?v_id  " g=" ?v_g " f=" ?v_f " parent=" ?v_parent crlf
+            (fact-slot-value ?f_addr_node LU) (fact-slot-value ?f_addr_node CU) (fact-slot-value ?f_addr_node RU) crlf
+            (fact-slot-value ?f_addr_node LM) (fact-slot-value ?f_addr_node CM) (fact-slot-value ?f_addr_node RM) crlf
+            (fact-slot-value ?f_addr_node LD) (fact-slot-value ?f_addr_node CD) (fact-slot-value ?f_addr_node RD) crlf));
+
 (modify ?f_addr_node(status 1));
 
 (bind ?a1 (calc_f (+ ?v_g 1) ?v_LU ?v_CU ?v_RU 0 ?v_CM ?v_RM ?v_LM ?v_CD ?v_RD));
-(retract ?f_addr_min);
-(assert (min ?a1));
 (assert (Node (id (get_next_ID)) (LU ?v_LU) (CU ?v_CU) (RU ?v_RU)
                                  (LM     0) (CM ?v_CM) (RM ?v_RM)
                                  (LD ?v_LM) (CD ?v_CD) (RD ?v_RD)
@@ -584,6 +658,9 @@ else
                  (g (+ ?v_g 1)) (status 0) (parent ?v_id) (f ?a2)
         )
 );
+
+(bind ?*NODE_COUNT* (+ ?*NODE_COUNT* 2));
+(bind ?*ITER_COUNT* (+ ?*ITER_COUNT* 1));
 );
 
 
@@ -599,12 +676,15 @@ else
                  (f ?v_f&:(= ?v_f ?min))
                 )
 =>
-;(printout t ?min " " (fact-slot-value ?f Exp) crlf);
+(if (= ?*DEBUG* 1) then (printout t crlf "Creating "
+3 " new node from node: " crlf "id=" ?v_id  " g=" ?v_g " f=" ?v_f " parent=" ?v_parent crlf
+            (fact-slot-value ?f_addr_node LU) (fact-slot-value ?f_addr_node CU) (fact-slot-value ?f_addr_node RU) crlf
+            (fact-slot-value ?f_addr_node LM) (fact-slot-value ?f_addr_node CM) (fact-slot-value ?f_addr_node RM) crlf
+            (fact-slot-value ?f_addr_node LD) (fact-slot-value ?f_addr_node CD) (fact-slot-value ?f_addr_node RD) crlf));
+
 (modify ?f_addr_node(status 1));
 
 (bind ?a1 (calc_f (+ ?v_g 1) ?v_LU ?v_CU ?v_RU ?v_LM 0 ?v_RM ?v_LD ?v_CM ?v_RD));
-(retract ?f_addr_min);
-(assert (min ?a1));
 (assert (Node (id (get_next_ID)) (LU ?v_LU) (CU ?v_CU) (RU ?v_RU)
                                  (LM ?v_LM) (CM     0) (RM ?v_RM)
                                  (LD ?v_LD) (CD ?v_CM) (RD ?v_RD)
@@ -627,6 +707,9 @@ else
                  (g (+ ?v_g 1)) (status 0) (parent ?v_id) (f ?a3)
         )
 );
+
+(bind ?*NODE_COUNT* (+ ?*NODE_COUNT* 3));
+(bind ?*ITER_COUNT* (+ ?*ITER_COUNT* 1));
 );
 
 
@@ -642,12 +725,15 @@ else
                  (f ?v_f&:(= ?v_f ?min))
                 )
 =>
-;(printout t ?min " " (fact-slot-value ?f Exp) crlf);
+(if (= ?*DEBUG* 1) then (printout t crlf "Creating "
+2 " new node from node: " crlf "id=" ?v_id  " g=" ?v_g " f=" ?v_f " parent=" ?v_parent crlf
+            (fact-slot-value ?f_addr_node LU) (fact-slot-value ?f_addr_node CU) (fact-slot-value ?f_addr_node RU) crlf
+            (fact-slot-value ?f_addr_node LM) (fact-slot-value ?f_addr_node CM) (fact-slot-value ?f_addr_node RM) crlf
+            (fact-slot-value ?f_addr_node LD) (fact-slot-value ?f_addr_node CD) (fact-slot-value ?f_addr_node RD) crlf));
+
 (modify ?f_addr_node(status 1));
 
 (bind ?a1 (calc_f (+ ?v_g 1) ?v_LU ?v_CU ?v_RU ?v_LM ?v_CM 0 ?v_LD ?v_CD ?v_RM));
-(retract ?f_addr_min);
-(assert (min ?a1));
 (assert (Node (id (get_next_ID)) (LU ?v_LU) (CU ?v_CU) (RU ?v_RU)
                                  (LM ?v_LM) (CM ?v_CM) (RM     0)
                                  (LD ?v_LD) (CD ?v_CD) (RD ?v_RM)
@@ -662,4 +748,21 @@ else
                  (g (+ ?v_g 1)) (status 0) (parent ?v_id) (f ?a2)
         )
 );
+
+(bind ?*NODE_COUNT* (+ ?*NODE_COUNT* 2));
+(bind ?*ITER_COUNT* (+ ?*ITER_COUNT* 1));
 );
+
+
+;;;            BCE!
+;;; ░░░░░█▐▓▓░████▄▄▄█▀▄▓▓▓▌█
+;;; ░░░░░▄█▌▀▄▓▓▄▄▄▄▀▀▀▄▓▓▓▓▓▌█
+;;; ░░░▄█▀▀▄▓█▓▓▓▓▓▓▓▓▓▓▓▓▀░▓▌█
+;;; ░░█▀▄▓▓▓███▓▓▓███▓▓▓▄░░▄▓▐█▌
+;;; ░█▌▓▓▓▀▀▓▓▓▓███▓▓▓▓▓▓▓▄▀▓▓▐█
+;;; ▐█▐██▐░▄▓▓▓▓▓▀▄░▀▓▓▓▓▓▓▓▓▓▌█▌
+;;; █▌███▓▓▓▓▓▓▓▓▐░░▄▓▓███▓▓▓▄▀▐█
+;;; █▐█▓▀░░▀▓▓▓▓▓▓▓▓▓██████▓▓▓▓▐█
+;;; ▌▓▄▌▀░▀░▐▀█▄▓▓██████████▓▓▓▌█▌
+;;; ▌▓▓▓▄▄▀▀▓▓▓▀▓▓▓▓▓▓▓▓█▓█▓█▓▓▌█▌
+;;; █▐▓▓▓▓▓▓▄▄▄▓▓▓▓▓▓█▓█▓█▓█▓▓▓▐
