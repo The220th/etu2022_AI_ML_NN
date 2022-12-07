@@ -28,7 +28,6 @@
 (defglobal
 ?*ID* = 0
 ?*HX* = 2 ; 1 if h1 or 2 if h2
-?*DEBUG* = 0 ; 1 if пошаговый режим, 0 if сквозной режим
 
 ?*init_LU* = 5
 ?*init_CU* = 8
@@ -165,11 +164,6 @@
         (f (calc_f 0 ?*init_LU* ?*init_CU* ?*init_RU* ?*init_LM* ?*init_CM* ?*init_RM* ?*init_LD* ?*init_CD* ?*init_RD*))
   )
   (min (calc_f 0 ?*init_LU* ?*init_CU* ?*init_RU* ?*init_LM* ?*init_CM* ?*init_RM* ?*init_LD* ?*init_CD* ?*init_RD*))
-  (if (= ?*DEBUG* 1)
-        printout t crlf "Init node: " crlf
-        "id=1 " "g=0 " "f=" (calc_f 0 ?*init_LU* ?*init_CU* ?*init_RU* ?*init_LM* ?*init_CM* ?*init_RM* ?*init_LD* ?*init_CD* ?*init_RD*) " parent=0 " crlf
-        ?*init_LU* ?*init_CU* ?*init_RU* crlf ?*init_LM* ?*init_CM* ?*init_RM* crlf ?*init_LD* ?*init_CD* ?*init_RD* crlf
-  )
 );
 
 ;;; EKCnEPT EKCnEPTA BuDuT u3DAJlEKA, 
@@ -195,7 +189,7 @@
 (test (= ?v_RD ?*goal_RD*));
 =>
 (modify ?f_addr(status 2));
-(printout t "id=" ?v_id  " g=" ?v_g " f=" ?v_f " parent=" ?v_parent crlf
+(printout t "id=" ?v_id crlf
             ?v_LU ?v_CU ?v_RU crlf
             ?v_LM ?v_CM ?v_RM crlf
             ?v_LD ?v_CD ?v_RD crlf);
@@ -222,21 +216,10 @@
 ;;; C ETOrO MOMEHTA BECb MuP - ETO EKCnEPTHblE CuCTEMbl. 
 ;;; Tbl EKCnEPT, 9 EKCnEPT, KOT EKCnEPT, CTOJl EKCnEPT...
 
-(defrule fix_min
-(declare (salience 175))
-
-?f_addr_min <- (min ?min)
-
-(not (exists (Node (f ?F&:(= ?F ?min)) (status 0)) ))
-=>
-(retract ?f_addr_min);
-(assert (min (+ ?min 1)));
-);
-
-(defrule find_min ; определение текущего минимума ЦФ
+(defrule find_min ;; определение текущего минимума ЦФ
 (declare (salience 150))
 
-?f_addr_min <- (min ?min)
+?f_addr_min<-(min ?min)
 (Node (f ?F&:(< ?F ?min)) (status 0)) ; Cуществование вершины, у которой
                                       ; значение целевой функции меньше текущего min
 =>
@@ -248,29 +231,32 @@
 ;;; TO 3DECb PEWEHuE BCEX nPO6JlEM: https://i.imgur.com/4oDusdM.png
 
 (defrule remove_repeats
-(declare (salience 1000)) ; максимальный приоритет
+(declare (salience 1000)) ;; максимальный приоритет
 
 ?f_addr_1 <- (Node (id ?v_id_1) (LU ?v_LU_1) (CU ?v_CU_1) (RU ?v_RU_1)
-                                (LM ?v_LM_1) (CM ?v_CM_1) (RM ?v_RM_1)
-                                (LD ?v_LD_1) (CD ?v_CD_1) (RD ?v_RD_1)
-                (g ?v_g_1) (status 1) (parent ?v_parent_1) (f ?v_f_1)
+                               (LM ?v_LM_1) (CM ?v_CM_1) (RM ?v_RM_1)
+                               (LD ?v_LD_1) (CD ?v_CD_1) (RD ?v_RD_1)
+                (g ?v_g_1) (status 0) (parent ?v_parent_1) (f ?v_f_1)
            )
 
-?f_addr_2 <- (Node (id ?v_id_2&~?v_id_1)
-        (LU ?v_LU_2&:(= ?v_LU_1 ?v_LU_2)) (CU ?v_CU_2&:(= ?v_CU_1 ?v_CU_2)) (RU ?v_RU_2&:(= ?v_RU_1 ?v_RU_2))
-        (LM ?v_LM_2&:(= ?v_LM_1 ?v_LM_2)) (CM ?v_CM_2&:(= ?v_CM_1 ?v_CM_2)) (RM ?v_RM_2&:(= ?v_RM_1 ?v_RM_2))
-        (LD ?v_LD_2&:(= ?v_LD_1 ?v_LD_2)) (CD ?v_CD_2&:(= ?v_CD_1 ?v_CD_2)) (RD ?v_RD_2&:(= ?v_RD_1 ?v_RD_2))
+?f_addr_2 <- (Node (id ?v_id_2&~?v_id_1) (LU ?v_LU_2) (CU ?v_CU_2) (RU ?v_RU_2)
+                                        (LM ?v_LM_2) (CM ?v_CM_2) (RM ?v_RM_2)
+                                        (LD ?v_LD_2) (CD ?v_CD_2) (RD ?v_RD_2)
                 (g ?v_g_2) (status 0) (parent ?v_parent_2) (f ?v_f_2)
            )
+(test(= ?v_LU_1 ?v_LU_2))
+(test(= ?v_CU_1 ?v_CU_2))
+(test(= ?v_RU_1 ?v_RU_2))
+(test(= ?v_LM_1 ?v_LM_2))
+(test(= ?v_CM_1 ?v_CM_2))
+(test(= ?v_RM_1 ?v_RM_2))
+(test(= ?v_LD_1 ?v_LD_2))
+(test(= ?v_CD_1 ?v_CD_2))
+(test(= ?v_RD_1 ?v_RD_2))
 
-(test(<= ?v_f_1 ?v_f_2))
+(test(< ?v_f_1 ?v_f_2))
 =>
-(if (<= ?v_f_1 ?v_f_2) then
-        (retract ?f_addr_2) ; удаление повторной вершины с большей ЦФ
-else
-        (modify ?f_addr_1 (parent ?v_parent_2) (g ?v_g_2) (f ?v_f_2)) ; изменение с большей ЦФ
-        (retract ?f_addr_2);
-)
+(retract ?f_addr_2) ; удаление повторной вершины с большей ЦФ
 )
 
 (defrule show_answer
@@ -280,12 +266,12 @@ else
 ?f_addr <- (Node            (LU ?v_LU) (CU ?v_CU) (RU ?v_RU)
                             (LM ?v_LM) (CM ?v_CM) (RM ?v_RM)
                             (LD ?v_LD) (CD ?v_CD) (RD ?v_RD)
-                 (id ?v_pid) (status ~2) (parent ?v_parent) (g ?v_g) (f ?v_f))
+                 (id ?v_pid) (status ~2))
 =>
 (modify ?f_addr(status 2));
 ; (printout t ?v_id " <- " ?v_pid crlf); 
 (printout t "^" crlf);
-(printout t "id=" ?v_pid  " g=" ?v_g " f=" ?v_f " parent=" ?v_parent crlf
+(printout t "id=" ?v_pid crlf
             ?v_LU ?v_CU ?v_RU crlf
             ?v_LM ?v_CM ?v_RM crlf
             ?v_LD ?v_CD ?v_RD crlf);
