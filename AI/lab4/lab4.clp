@@ -83,7 +83,7 @@
 
 (slot g (type NUMBER)) ; cost, depth
 (slot status(type NUMBER) (default 0)) ; статус вершины: 0 – не раскрыта, 1 – раскрыта, 2 – соответствует решению
-(slot parent (type NUMBER)) ; ссылка на родителя
+(slot parent (type NUMBER)) ; id родителя
 (slot f (type NUMBER)) ; значение целевой функции для данной вершины f = g + h
 );
 
@@ -91,6 +91,10 @@
 (bind ?*ID* (+ ?*ID* 1)) ;; инкрементируем ID
 (return ?*ID*);
 );
+
+;;; BCE, 3A96AJlO nuCATb 
+;;;     KOMMEHTAPuu
+;;; HuKAKuX KOMMEHTAPuEB DAJlbWE
 
 (deffunction h1(    ?cur_LU ?cur_CU ?cur_RU
                     ?cur_LM ?cur_CM ?cur_RM
@@ -272,8 +276,6 @@
         (LD ?v_LD_2&:(= ?v_LD_1 ?v_LD_2)) (CD ?v_CD_2&:(= ?v_CD_1 ?v_CD_2)) (RD ?v_RD_2&:(= ?v_RD_1 ?v_RD_2))
                 (g ?v_g_2) (status 0) (parent ?v_parent_2) (f ?v_f_2)
            )
-
-; (test(<= ?v_f_1 ?v_f_2))
 =>
 (if (= ?*DEBUG* 1) then
 (printout t crlf "Deleting repeat node:" crlf); 
