@@ -241,7 +241,7 @@
 
 ?f_addr_min <- (min ?min)
 
-(not (exists (Node (f ?F&:(= ?F ?min)) (status 0)) ))
+(not (exists (Node (f ?F&:(<= ?F ?min)) (status 0)) ))
 =>
 (retract ?f_addr_min);
 (assert (min (+ ?min 1)));
