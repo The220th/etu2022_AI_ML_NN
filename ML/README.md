@@ -25,3 +25,6 @@
 
 Датасет взят [отсюда](https://www.kaggle.com/datasets/lakshmanraj/vehicle-insurance-policy).
 
+# lab3 - Регрессия
+
+Датасет взят [отсюда](https://www.kaggle.com/datasets/deepcontractor/car-price-prediction-challenge).
