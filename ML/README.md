@@ -14,7 +14,7 @@
 # Зависимости
 
 ``` bash
-> pip3 install pandas seaborn statsmodels sklearn xgboost scikit-learn scipy matplotlib
+> pip3 install pandas seaborn statsmodels sklearn xgboost scikit-learn scipy matplotlib imblearn
 ```
 
 # lab1 - Классификация
