@@ -14,13 +14,13 @@
 # Зависимости
 
 ``` bash
-> pip3 install pandas numpy pillow pathlib
+> pip3 install pandas numpy pillow pathlib scikit-learn scipy matplotlib
 
 # pytorch for CPU only:
 > pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
 
 # pytorch for GPU:
-> pip3 install torch torchvision torchaudio
+> pip3 install torch torchvision torchaudio torchtext pytorch-nlp torchsummary
 
 > pip3 install fastai
 ```
@@ -66,3 +66,8 @@ watch -n 0.5 nvidia-smi
 - - параметры архитектуры (например, кол-во нейронов на N-ом слое, но не их веса)
 
 - Трансферное обучение
+
+# lab 2
+
+Рекурентные нейронные сети. Датасет: Toxic Comment Classification.
+
