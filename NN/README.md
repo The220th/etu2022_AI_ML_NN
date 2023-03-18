@@ -5,7 +5,7 @@
 > pip3 install --upgrade ipython jupyter
 
 > cd {где лежат файлы .ipynb}
-> jupyter notebook
+> jupyter notebook --no-browser
 # В браузере http://localhost:8888/?token={your_token}
 # Найти токен можно командой
 > jupyter notebook list
